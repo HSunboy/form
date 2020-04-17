@@ -1,6 +1,7 @@
 import set from 'lodash/set';
 import createFormField, { isFormField } from './createFormField';
 import {
+  hasRules,
   flattenFields,
   getErrorStrs,
   startsWith,
@@ -10,22 +11,22 @@ function partOf(a, b) {
   return b.indexOf(a) === 0 && ['.', '['].indexOf(b[a.length]) !== -1;
 }
 
+function internalFlattenFields(fields) {
+  return flattenFields(
+    fields,
+    (_, node) => isFormField(node),
+    'You must wrap field data with `createFormField`.'
+  );
+}
+
 class FieldsStore {
   constructor(fields) {
-    this.fields = this.flattenFields(fields);
+    this.fields = internalFlattenFields(fields);
     this.fieldsMeta = {};
   }
 
   updateFields(fields) {
-    this.fields = this.flattenFields(fields);
-  }
-
-  flattenFields(fields) {
-    return flattenFields(
-      fields,
-      (_, node) => isFormField(node),
-      'You must wrap field data with `createFormField`.'
-    );
+    this.fields = internalFlattenFields(fields);
   }
 
   flattenRegisteredFields(fields) {
@@ -33,7 +34,7 @@ class FieldsStore {
     return flattenFields(
       fields,
       path => validFieldsName.indexOf(path) >= 0,
-      'You cannot set field before registering it.'
+      'You cannot set a form field before rendering a field associated with the value.'
     );
   }
 
@@ -58,7 +59,9 @@ class FieldsStore {
     };
     const nowValues = {};
     Object.keys(fieldsMeta)
-      .forEach((f) => nowValues[f] = this.getValueFromFields(f, nowFields));
+      .forEach((f) => {
+        nowValues[f] = this.getValueFromFields(f, nowFields);
+      });
     Object.keys(nowValues).forEach((f) => {
       const value = nowValues[f];
       const fieldMeta = this.getFieldMeta(f);
@@ -92,6 +95,19 @@ class FieldsStore {
 
   setFieldMeta(name, meta) {
     this.fieldsMeta[name] = meta;
+  }
+
+  setFieldsAsDirty() {
+    Object.keys(this.fields).forEach((name) => {
+      const field = this.fields[name];
+      const fieldMeta = this.fieldsMeta[name];
+      if (field && fieldMeta && hasRules(fieldMeta.validate)) {
+        this.fields[name] = {
+          ...field,
+          dirty: true,
+        };
+      }
+    });
   }
 
   getFieldMeta(name) {
@@ -157,7 +173,8 @@ class FieldsStore {
   }
 
   getNotCollectedFields() {
-    return this.getValidFieldsName()
+    const fieldsName = this.getValidFieldsName();
+    return fieldsName
       .filter(name => !this.fields[name])
       .map(name => ({
         name,

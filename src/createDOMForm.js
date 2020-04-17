@@ -23,9 +23,9 @@ function computedStyle(el, prop) {
       // DEV: Grabbed from jQuery
       // https://github.com/jquery/jquery/blob/1.9-stable/src/css.js#L191-L194
       // https://github.com/jquery/jquery/blob/1.9-stable/src/core.js#L593-L597
-      prop.replace(/-(\w)/gi, (word, letter) => {
-        return letter.toUpperCase();
-      })
+        prop.replace(/-(\w)/gi, (word, letter) => {
+          return letter.toUpperCase();
+        })
       ];
   }
   return undefined;
@@ -66,19 +66,21 @@ const mixin = {
         const validNames = this.fieldsStore.getValidFieldsName();
         let firstNode;
         let firstTop;
-        for (const name of validNames) {
+
+        validNames.forEach((name) => {
           if (has(error, name)) {
             const instance = this.getFieldInstance(name);
             if (instance) {
               const node = ReactDOM.findDOMNode(instance);
               const top = node.getBoundingClientRect().top;
-              if (firstTop === undefined || firstTop > top) {
+              if (node.type !== 'hidden' && (firstTop === undefined || firstTop > top)) {
                 firstTop = top;
                 firstNode = node;
               }
             }
           }
-        }
+        });
+
         if (firstNode) {
           const c = options.container || getScrollableContainer(firstNode);
           scrollIntoView(firstNode, c, {

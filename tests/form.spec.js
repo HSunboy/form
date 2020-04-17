@@ -1,4 +1,5 @@
-/* eslint-disable no-undef, react/prop-types, react/no-multi-comp */
+/* eslint-disable no-undef, react/prop-types, react/no-multi-comp,
+react/prefer-stateless-function */
 
 import React from 'react';
 import { mount } from 'enzyme';
@@ -51,5 +52,28 @@ describe('resetFields', () => {
     expect(form.getFieldsValue(['normal'])).toEqual({ normal: 'Hello world!' });
     form.resetFields();
     expect(form.getFieldsValue(['normal'])).toEqual({ normal: '' });
+  });
+});
+
+describe('form name', () => {
+  it('set id', () => {
+    const Test = createForm({
+      fieldNameProp: 'id',
+      name: 'test',
+    })(
+      class extends React.Component {
+        render() {
+          const { getFieldProps } = this.props.form;
+          return (
+            <input
+              {...getFieldProps('user')}
+            />
+          );
+        }
+      }
+    );
+    const wrapper = mount(<Test />);
+    const input = wrapper.find('input').instance();
+    expect(input.id).toBe('test_user');
   });
 });
