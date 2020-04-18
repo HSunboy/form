@@ -9,6 +9,9 @@ class Form extends React.Component {
   static propTypes = {
     form: PropTypes.object,
   };
+  state = {
+    showName: true,
+  };
 
   componentWillMount() {
     this.nameDecorator = this.props.form.getFieldDecorator('name', {
@@ -40,6 +43,27 @@ class Form extends React.Component {
 
     return (
       <form onSubmit={this.onSubmit}>
+        {this.state.showName ? (
+          this.props.form.getFieldDecorator('nameTest', {
+            initialValue: '',
+            rules: [{
+              required: true,
+              message: 'What\'s your name?',
+            }],
+          })(
+            <input />
+          )
+        ) : (
+            [this.props.form.getFieldDecorator('nameTest', {
+              initialValue: '',
+              rules: [{
+                required: true,
+                message: 'What\'s your test name?',
+              }],
+            })(
+              <input />
+            ),
+            ])}
         {this.nameDecorator(
           <input
             onChange={this.onChange}
@@ -49,6 +73,16 @@ class Form extends React.Component {
           {(getFieldError('name') || []).join(', ')}
         </div>
         <button>Submit</button>
+        <a style={{ color: 'skyblue' }} onClick={() => {
+          this.setState((state) => {
+            return {
+              showName: !state.showName,
+            };
+          });
+        }}
+        >
+        切换表单
+        </a>
       </form>
     );
   }
