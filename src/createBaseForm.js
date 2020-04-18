@@ -42,10 +42,19 @@ function createBaseForm(option = {}, mixins = []) {
 
   return function decorate(WrappedComponent) {
     const Form = createReactClass({
+      /**
+       * 注入getForm方法
+       */
       mixins,
 
+      /**
+       * 初始化store，加上基本属性和前置方法。
+       */
       getInitialState() {
         const fields = mapPropsToFields && mapPropsToFields(this.props);
+        /**
+         * 创建field store
+         */
         this.fieldsStore = createFieldsStore(fields || {});
 
         this.instances = {};
@@ -67,6 +76,9 @@ function createBaseForm(option = {}, mixins = []) {
           'isFieldsTouched',
           'isFieldTouched',
         ].forEach(key => {
+          /**
+           * 加一个是否通过ref调用的判断
+           */
           this[key] = (...args) => {
             if (process.env.NODE_ENV !== 'production') {
               warning(
@@ -103,12 +115,26 @@ function createBaseForm(option = {}, mixins = []) {
         if (fieldMeta[action]) {
           fieldMeta[action](...args);
         } else if (fieldMeta.originalProps && fieldMeta.originalProps[action]) {
+          /**
+           * 这段代码可以执行getFieldDecorator包裹组件的onChange等事件。
+           * 这也是getFieldProps中onChange必须定义在options里面的原因
+           */
           fieldMeta.originalProps[action](...args);
         }
+        /**
+         * 处理event的不同数据类别获取的value
+         */
         const value = fieldMeta.getValueFromEvent
           ? fieldMeta.getValueFromEvent(...args)
           : getValueFromEvent(...args);
         if (onValuesChange && value !== this.fieldsStore.getFieldValue(name)) {
+          /**
+           * 所有field的value
+           * {
+           *  'a': 1,
+           *  'b.c': 2
+           * }
+           */
           const valuesAll = this.fieldsStore.getAllValues();
           const valuesAllSet = {};
           valuesAll[name] = value;
@@ -164,6 +190,9 @@ function createBaseForm(option = {}, mixins = []) {
         });
       },
 
+      /**
+       * 制造一个绑定this，field标示，触发事件名字的函数缓存
+       */
       getCacheBind(name, action, fn) {
         if (!this.cachedBind[name]) {
           this.cachedBind[name] = {};
@@ -178,6 +207,9 @@ function createBaseForm(option = {}, mixins = []) {
         return cache[action].fn;
       },
 
+      /**
+       * 创建fields元数据，然后返回一个把处理后的props传入field的高阶函数
+       */
       getFieldDecorator(name, fieldOption) {
         const props = this.getFieldProps(name, fieldOption);
         return fieldElem => {
@@ -213,7 +245,10 @@ function createBaseForm(option = {}, mixins = []) {
         };
       },
 
-      getFieldProps(name, usersFieldOption = {}) {
+      /**
+       * 根据option获取需要映射在field上面的props
+       */
+      getFieldProps(name/* 标示名 */, usersFieldOption = {}) {
         if (!name) {
           throw new Error('Must call `getFieldProps` with valid name string!');
         }
@@ -230,6 +265,9 @@ function createBaseForm(option = {}, mixins = []) {
 
         delete this.clearedFieldMetaCache[name];
 
+        /**
+         * 字段的配置属性，例如rules，initialValue
+         */
         const fieldOption = {
           name,
           trigger: DEFAULT_TRIGGER,
@@ -250,19 +288,31 @@ function createBaseForm(option = {}, mixins = []) {
           fieldMeta.initialValue = fieldOption.initialValue;
         }
 
+        /**
+         * 最终要返回的props
+         */
         const inputProps = {
           ...this.fieldsStore.getFieldValuePropValue(fieldOption),
           ref: this.getCacheBind(name, `${name}__ref`, this.saveRef),
         };
+        /**
+         * 把field的名字传给props特定字段。
+         */
         if (fieldNameProp) {
           inputProps[fieldNameProp] = formName ? `${formName}_${name}` : name;
         }
 
+        /**
+         * 校验数组
+         */
         const validateRules = normalizeValidateRules(
           validate,
           rules,
           validateTrigger,
         );
+        /**
+         * 所有校验触发类型
+         */
         const validateTriggers = getValidateTriggers(validateRules);
         validateTriggers.forEach(action => {
           if (inputProps[action]) return;
@@ -273,6 +323,9 @@ function createBaseForm(option = {}, mixins = []) {
           );
         });
 
+        /**
+         * 这里给value改变加一个事件
+         */
         // make sure that the value will be collect
         if (trigger && validateTriggers.indexOf(trigger) === -1) {
           inputProps[trigger] = this.getCacheBind(
@@ -287,12 +340,18 @@ function createBaseForm(option = {}, mixins = []) {
           ...fieldOption,
           validate: validateRules,
         };
+        /**
+         * 保存一下这边辛辛苦苦弄出来的元数据信息
+         */
         this.fieldsStore.setFieldMeta(name, meta);
         if (fieldMetaProp) {
           inputProps[fieldMetaProp] = meta;
         }
 
         if (fieldDataProp) {
+          /**
+           * 校验信息，value这些通通放进去
+           */
           inputProps[fieldDataProp] = this.fieldsStore.getField(name);
         }
 
@@ -306,6 +365,9 @@ function createBaseForm(option = {}, mixins = []) {
         return this.instances[name];
       },
 
+      /**
+       * 获取这个action下的所有rules数组
+       */
       getRules(fieldMeta, action) {
         const actionRules = fieldMeta.validate
           .filter(item => {
@@ -315,6 +377,9 @@ function createBaseForm(option = {}, mixins = []) {
         return flattenArray(actionRules);
       },
 
+      /**
+       * 更新全部fields，触发onFieldsChange，然后强制更新react form组件(让其他input也执行更新)
+       */
       setFields(maybeNestedFields, callback) {
         const fields = this.fieldsStore.flattenRegisteredFields(
           maybeNestedFields,
@@ -371,6 +436,9 @@ function createBaseForm(option = {}, mixins = []) {
         }
       },
 
+      /**
+       * 保存field的dom节点，然后执行原有的ref
+       */
       saveRef(name, _, component) {
         if (!component) {
           const fieldMeta = this.fieldsStore.getFieldMeta(name);
@@ -451,6 +519,9 @@ function createBaseForm(option = {}, mixins = []) {
         }
       },
 
+      /**
+       * 先更新各个field的值，更新form，然后校验fields的值，更新field，更新form
+       */
       validateFieldsInternal(
         fields,
         { fieldNames, action, options = {} },
@@ -460,6 +531,9 @@ function createBaseForm(option = {}, mixins = []) {
         const allValues = {};
         const allFields = {};
         const alreadyErrors = {};
+        /**
+         * 各个field的信息分一分
+         */
         fields.forEach(field => {
           const name = field.name;
           if (options.force !== true && field.dirty === false) {
@@ -500,6 +574,9 @@ function createBaseForm(option = {}, mixins = []) {
             ...alreadyErrors,
           };
           if (errors && errors.length) {
+            /**
+             * 把每个errors推入errorsGroup
+             */
             errors.forEach(e => {
               const errorFieldName = e.field;
               let fieldName = errorFieldName;
@@ -543,10 +620,16 @@ function createBaseForm(option = {}, mixins = []) {
           }
           const expired = [];
           const nowAllFields = {};
+          /**
+           * 更新field中的error等信息
+           */
           Object.keys(allRules).forEach(name => {
             const fieldErrors = get(errorsGroup, name);
             const nowField = this.fieldsStore.getField(name);
             // avoid concurrency problems
+            /**
+             * 校验可能是异步的，所以需要比较一下当前field和校验的field
+             */
             if (!eq(nowField.value, allValues[name])) {
               expired.push({
                 name,
@@ -559,6 +642,9 @@ function createBaseForm(option = {}, mixins = []) {
               nowAllFields[name] = nowField;
             }
           });
+          /**
+           * 把这些错误信息吐回到fields中，并更新form
+           */
           this.setFields(nowAllFields);
           if (callback) {
             if (expired.length) {
@@ -708,6 +794,9 @@ function createBaseForm(option = {}, mixins = []) {
       },
     });
 
+    /**
+     * 提升包裹组件的静态方法, 然后把willreceiveProps改成UNSAFE_will...
+     */
     return argumentContainer(unsafeLifecyclesPolyfill(Form), WrappedComponent);
   };
 }

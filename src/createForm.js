@@ -1,6 +1,9 @@
 import createBaseForm from './createBaseForm';
 
 export const mixin = {
+  /**
+   * 这边都是暴露给this.props.form的API
+   */
   getForm() {
     return {
       getFieldsValue: this.fieldsStore.getFieldsValue,

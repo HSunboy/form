@@ -5,6 +5,9 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'WrappedComponent';
 }
 
+/**
+ * 把被包裹组件的静态方法放入高阶组件里面
+ */
 export function argumentContainer(Container, WrappedComponent) {
   /* eslint no-param-reassign:0 */
   Container.displayName = `Form(${getDisplayName(WrappedComponent)})`;
@@ -59,6 +62,10 @@ export function flattenFields(maybeNestedFields, isLeafNode, errorMessage) {
   return fields;
 }
 
+/**
+ * 根据各种校验配置来生成一个标准校验数组
+ * {rules: [], trigger: ''}
+ */
 export function normalizeValidateRules(validate, rules, validateTrigger) {
   const validateRules = validate.map((item) => {
     const newItem = {
@@ -79,6 +86,9 @@ export function normalizeValidateRules(validate, rules, validateTrigger) {
   return validateRules;
 }
 
+/**
+ * 获取所有的校验触发事件类型
+ */
 export function getValidateTriggers(validateRules) {
   return validateRules
     .filter(item => !!item.rules && item.rules.length)

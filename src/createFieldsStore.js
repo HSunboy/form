@@ -11,6 +11,11 @@ function partOf(a, b) {
   return b.indexOf(a) === 0 && ['.', '['].indexOf(b[a.length]) !== -1;
 }
 
+/**
+ * 拍平一个对象, 抽取里面的form信息
+ * {a:1, b: 2, {c: { d: 1 }}}
+ * => { a: 1 , b: 2, 'c.d': 1 }
+ */
 function internalFlattenFields(fields) {
   return flattenFields(
     fields,
@@ -51,6 +56,9 @@ class FieldsStore {
     });
   }
 
+  /**
+   * 修改field里面的各种属性，并且，根据各个field的normalize转换函数来更新field的value。
+   */
   setFields(fields) {
     const fieldsMeta = this.fieldsMeta;
     const nowFields = {
@@ -66,6 +74,9 @@ class FieldsStore {
       const value = nowValues[f];
       const fieldMeta = this.getFieldMeta(f);
       if (fieldMeta && fieldMeta.normalize) {
+        /**
+         * 用户自定义的转换函数
+         */
         const nowValue =
                 fieldMeta.normalize(value, this.getValueFromFields(f, this.fields), nowValues);
         if (nowValue !== value) {
@@ -97,6 +108,9 @@ class FieldsStore {
     this.fieldsMeta[name] = meta;
   }
 
+  /**
+   * 在fields里面把所有需要校验的field设置为dirty
+   */
   setFieldsAsDirty() {
     Object.keys(this.fields).forEach((name) => {
       const field = this.fields[name];
@@ -110,11 +124,17 @@ class FieldsStore {
     });
   }
 
+  /**
+   * 获取fields源信息，没有的话，就新建一个
+   */
   getFieldMeta(name) {
     this.fieldsMeta[name] = this.fieldsMeta[name] || {};
     return this.fieldsMeta[name];
   }
 
+  /**
+   * 返回value或者initialValue
+   */
   getValueFromFields(name, fields) {
     const field = fields[name];
     if (field && 'value' in field) {
@@ -124,6 +144,9 @@ class FieldsStore {
     return fieldMeta && fieldMeta.initialValue;
   }
 
+  /**
+   * 获取所有field的value
+   */
   getAllValues = () => {
     const { fieldsMeta, fields } = this;
     return Object.keys(fieldsMeta)
@@ -154,9 +177,16 @@ class FieldsStore {
       )));
   }
 
+  /**
+   * 获取field的值对象
+   * 例如 {value: 1} 或者 {checked: true}
+   */
   getFieldValuePropValue(fieldMeta) {
     const { name, getValueProps, valuePropName } = fieldMeta;
     const field = this.getField(name);
+    /**
+     * 设置value
+     */
     const fieldValue = 'value' in field ?
       field.value : fieldMeta.initialValue;
     if (getValueProps) {
@@ -165,6 +195,9 @@ class FieldsStore {
     return { [valuePropName]: fieldValue };
   }
 
+  /**
+   * 获取fields的属性，例如value， errors
+   */
   getField(name) {
     return {
       ...this.fields[name],
