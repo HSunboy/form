@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>getFieldDecorator.js - example - rc-form@2.2.0</title>
+  <title>getFieldDecorator.js - example - rc-formx@1.4.9</title>
   <meta name="viewport"
         content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <meta charset="utf-8"/>
@@ -263,7 +263,7 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
 <body>
   <div class="container">
     <div class="header">
-      <h1>rc-form@2.2.0</h1>
+      <h1>rc-formx@1.4.9</h1>
 
       <p>React High Order Form Component</p>
     </div>
@@ -272,12 +272,17 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
     <div class="highlight"><pre><code language="undefined">/* eslint react/no-multi-comp:0, no-console:0 */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
-import { createForm, formShape } from 'rc-form';
+import { createForm } from 'rc-form';
 
 class Form extends React.Component {
   static propTypes = {
-    form: formShape,
+    form: PropTypes.object,
+  };
+  state = {
+    showName: true,
+    hideName: false
   };
 
   componentWillMount() {
@@ -307,10 +312,34 @@ class Form extends React.Component {
 
   render() {
     const { getFieldError } = this.props.form;
+    const { showName, hideName } = this.state;
 
     return (
       &lt;form onSubmit={this.onSubmit}&gt;
-        {this.nameDecorator(
+        {!hideName ? (
+          showName ? (
+            this.props.form.getFieldDecorator('nameTest', {
+              initialValue: '',
+              rules: [{
+                required: true,
+                message: 'What\'s your name?',
+              }],
+            })(
+              &lt;input /&gt;
+            )
+          ) : (
+              [this.props.form.getFieldDecorator('nameTest', {
+                initialValue: '',
+                rules: [{
+                  required: true,
+                  message: 'What\'s your test name?',
+                }],
+              })(
+                &lt;input ref={() =&gt; { }} key='2' /&gt;
+              ),
+              ])
+        ) : null}
+        {!hideName &amp;&amp; this.nameDecorator(
           &lt;input
             onChange={this.onChange}
           /&gt;
@@ -319,6 +348,26 @@ class Form extends React.Component {
           {(getFieldError('name') || []).join(', ')}
         &lt;/div&gt;
         &lt;button&gt;Submit&lt;/button&gt;
+        &lt;a style={{ color: 'skyblue' }} onClick={() =&gt; {
+          this.setState((state) =&gt; {
+            return {
+              showName: !state.showName,
+            };
+          });
+        }}
+        &gt;
+          切换表单
+        &lt;/a&gt;
+        &lt;a style={{ color: 'skyblue' }} onClick={() =&gt; {
+          this.setState((state) =&gt; {
+            return {
+              hideName: !state.hideName,
+            };
+          });
+        }}
+        &gt;
+          隐藏表单
+        &lt;/a&gt;
       &lt;/form&gt;
     );
   }
