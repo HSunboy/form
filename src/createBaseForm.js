@@ -37,6 +37,7 @@ function createBaseForm(option = {}, mixins = []) {
 
         this.instances = {};
         this.cachedBind = {};
+        this.created = {};
         // HACK: https://github.com/ant-design/ant-design/issues/6406
         ['getFieldsValue',
          'getFieldValue',
@@ -124,8 +125,13 @@ function createBaseForm(option = {}, mixins = []) {
 
       getFieldDecorator(name, fieldOption) {
         const props = this.getFieldProps(name, fieldOption);
+        const decoratorFieldMeta = this.fieldsStore.getFieldMeta(name);
         return (fieldElem) => {
-          const fieldMeta = this.fieldsStore.getFieldMeta(name);
+          let fieldMeta = this.fieldsStore.getFieldMeta(name);
+          if (isEmptyObject(fieldMeta)) {
+            this.fieldsStore.setFieldMeta(name, decoratorFieldMeta);
+            fieldMeta = decoratorFieldMeta;
+          }
           const originalProps = fieldElem.props;
           if (process.env.NODE_ENV !== 'production') {
             const valuePropName = fieldMeta.valuePropName;
@@ -146,9 +152,13 @@ function createBaseForm(option = {}, mixins = []) {
           }
           fieldMeta.originalProps = originalProps;
           fieldMeta.ref = fieldElem.ref;
+          this.created[name] = true;
           return React.cloneElement(fieldElem, {
             ...props,
             ...this.fieldsStore.getFieldValuePropValue(fieldMeta),
+            ref: (...args) => {
+              props.ref(...args);
+            },
           });
         };
       },
@@ -293,12 +303,18 @@ function createBaseForm(option = {}, mixins = []) {
         this.setFields(newFields);
       },
 
+      clearField(name) {
+        this.fieldsStore.clearField(name);
+        delete this.instances[name];
+        delete this.cachedBind[name];
+      },
+
       saveRef(name, _, component) {
         if (!component) {
-          // after destroy, delete data
-          this.fieldsStore.clearField(name);
-          delete this.instances[name];
-          delete this.cachedBind[name];
+          if (!this.created[name]) {
+            this.clearField(name);
+          }
+          delete this.created[name];
           return;
         }
         const fieldMeta = this.fieldsStore.getFieldMeta(name);
@@ -310,6 +326,12 @@ function createBaseForm(option = {}, mixins = []) {
             }
             ref(component);
           }
+        }
+        if (!this.instances[name]) {
+          /**
+           * Mounted for the first time
+           */
+          delete this.created[name];
         }
         this.instances[name] = component;
       },
