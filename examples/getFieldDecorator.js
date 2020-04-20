@@ -11,6 +11,7 @@ class Form extends React.Component {
   };
   state = {
     showName: true,
+    hideName: false,
   };
 
   componentWillMount() {
@@ -40,31 +41,34 @@ class Form extends React.Component {
 
   render() {
     const { getFieldError } = this.props.form;
+    const { showName, hideName } = this.state;
 
     return (
       <form onSubmit={this.onSubmit}>
-        {this.state.showName ? (
-          this.props.form.getFieldDecorator('nameTest', {
-            initialValue: '',
-            rules: [{
-              required: true,
-              message: 'What\'s your name?',
-            }],
-          })(
-            <input />
-          )
-        ) : (
-            [this.props.form.getFieldDecorator('nameTest', {
+        {!hideName ? (
+          showName ? (
+            this.props.form.getFieldDecorator('nameTest', {
               initialValue: '',
               rules: [{
                 required: true,
-                message: 'What\'s your test name?',
+                message: 'What\'s your name?',
               }],
             })(
               <input />
-            ),
-            ])}
-        {this.nameDecorator(
+            )
+          ) : (
+              [this.props.form.getFieldDecorator('nameTest', {
+                initialValue: '',
+                rules: [{
+                  required: true,
+                  message: 'What\'s your test name?',
+                }],
+              })(
+                <input ref={() => { }} key="2" />
+              ),
+              ])
+        ) : null}
+        {!hideName && this.nameDecorator(
           <input
             onChange={this.onChange}
           />
@@ -81,7 +85,17 @@ class Form extends React.Component {
           });
         }}
         >
-        切换表单
+          切换表单
+        </a>
+        <a style={{ color: 'skyblue' }} onClick={() => {
+          this.setState((state) => {
+            return {
+              hideName: !state.hideName,
+            };
+          });
+        }}
+        >
+          隐藏表单
         </a>
       </form>
     );

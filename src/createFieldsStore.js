@@ -62,6 +62,10 @@ class FieldsStore {
     return newFields;
   }
 
+  getAllFieldsName() {
+    return Object.keys(this.fields);
+  }
+
   getValueFromFieldsInternal(name, fields) {
     const field = fields[name];
     if (field && 'value' in field) {
