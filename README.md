@@ -1,5 +1,11 @@
 # rc-form
 
+> 该仓库修复了动态表单的问题
+
+```javascript
+npm i my-rc-form
+```
+
 React High Order Form Component.
 
 [![NPM version][npm-image]][npm-url]
